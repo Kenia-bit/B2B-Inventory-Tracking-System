@@ -124,37 +124,56 @@ def delete_farmer(farmer_id):
     return jsonify({'message': 'Farmer deleted successfully!'}), 200
 
 
+# 1. GET ROUTE 
 @app.route('/api/harvests', methods=['GET'])
 @login_required
-def create_harvests():
+def get_harvests():
     try:
-        data = request.get_json()
+        harvests = Harvest.query.filter_by(user_id=current_user.id).all()
+        results = []
+        for h in harvests:
+            farmer = db.session.get(Farmer, h.farmer_id) if h.farmer_id else None
+            results.append({
+                'id': h.harvest_id,
+                'crop_type': h.crop_type,
+                'quantity_kg': h.quantity_kg,
+                'harvest_date': str(h.harvest_date) if h.harvest_date else '',
+                'farmer_name': farmer.full_name if farmer else 'Unknown Farmer'
+            })
+        return jsonify(results)
+    except Exception as e:
+        print("!!! GET HARVESTS CRASHED !!!")
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
-        # 1. Read fields sent from frontend
+
+# 2. POST ROUTE 
+@app.route('/api/harvests', methods=['POST'])
+@login_required
+def create_harvest():
+    try:
+        data = request.get_json() or {}
+
         farmer_id = data.get('farmer_id')
         crop_type = data.get('crop_type')
         quantity_kg = data.get('quantity_kg')
         harvest_date = data.get('harvest_date')
 
-        # 2. Create new Harvest model instance
         new_harvest = Harvest(
-            User_id=current_user.id,
+            user_id=current_user.id,
             farmer_id=farmer_id,
             crop_type=crop_type,
             quantity_kg=quantity_kg,
             harvest_date=harvest_date
         )
 
-        # 3. Save to database
         db.session.add(new_harvest)
         db.session.commit()
 
         return jsonify({'message': 'Harvest created successfully!', 'id': new_harvest.harvest_id}), 201
-    
-    except Exception as e:
-        #Print the exact failure reason to Render logs
 
-        print("!!! HARVEST ROUTE CRASHED!!!")
+    except Exception as e:
+        print("!!! POST HARVEST CRASHED !!!")
         traceback.print_exc()
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
