@@ -1,3 +1,4 @@
+import traceback
 from flask import Flask, jsonify, request, render_template, redirect, url_for, flash
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -125,21 +126,39 @@ def delete_farmer(farmer_id):
 
 @app.route('/api/harvests', methods=['GET'])
 @login_required
-def get_harvests():
-    harvests = Harvest.query.filter_by(user_id=current_user.id).all()
-    results = []
-    for h in harvests:
-        # Fetch associated farmer name safely
-        farmer = db.session.get(Farmer, h.farmer_id) if h.farmer_id else None
-        results.append({
-            'id': h.harvest_id,
-            'crop_type': h.crop_type,
-            'quantity_kg': h.quantity_kg,
-            'harvest_date': h.harvest_date.strftime('%Y-%m-%d') if h.harvest_date else '',
-            'farmer_name': farmer.full_name if farmer else 'Unknown Farmer'
-        })
-    return jsonify(results)
+def create_harvests():
+    try:
+        data = request.get_json()
 
+        # 1. Read fields sent from frontend
+        farmer_id = data.get('farmer_id')
+        crop_type = data.get('crop_type')
+        quantity_kg = data.get('quantity_kg')
+        harvest_date = data.get('harvest_date')
+
+        # 2. Create new Harvest model instance
+        new_harvest = Harvest(
+            User_id=current_user.id,
+            farmer_id=farmer_id,
+            crop_type=crop_type,
+            quantity_kg=quantity_kg,
+            harvest_date=harvest_date
+        )
+
+        # 3. Save to database
+        db.session.add(new_harvest)
+        db.session.commit()
+
+        return jsonify({'message': 'Harvest created successfully!', 'id': new_harvest.harvest_id}), 201
+    
+    except Exception as e:
+        #Print the exact failure reason to Render logs
+
+        print("!!! HARVEST ROUTE CRASHED!!!")
+        traceback.print_exc()
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+   
 # Add Toggle Status Route for Orders
 @app.route('/api/orders/<int:order_id>/toggle-status', methods=['PATCH', 'POST'])
 @login_required
