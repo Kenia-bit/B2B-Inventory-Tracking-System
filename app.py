@@ -5,7 +5,17 @@ from models import db, User, Farmer, Harvest, Buyer, Order
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://kenia:1234@localhost:5432/b2b_inventory_db'
+
+import os
+
+# Get the database URL from Render environment variables, or fall back to local sqlite
+db_url = os.environ.get("DATABASE_URL", "sqlite:///app.db")
+
+# Render gives "postgres://...", but SQLAlchemy requires "postgresql://..."
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
