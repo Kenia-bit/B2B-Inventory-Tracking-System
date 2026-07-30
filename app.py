@@ -3,6 +3,7 @@ from flask import Flask, jsonify, request, render_template, redirect, url_for, f
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Farmer, Harvest, Buyer, Order
+from datetime import datetime
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-here'
@@ -157,14 +158,19 @@ def create_harvest():
         farmer_id = data.get('farmer_id')
         crop_type = data.get('crop_type')
         quantity_kg = data.get('quantity_kg')
-        harvest_date = data.get('harvest_date')
+        date_str = data.get('harvest_date')
+
+        # Convert date string ('2026-07-30') into paython date object
+        parsed_date = None
+        if date_str:
+            parsed_date = datetime.strptime(date_str, '%Y-%M-%D').date()
 
         new_harvest = Harvest(
             user_id=current_user.id,
-            farmer_id=farmer_id,
+            farmer_id=int(farmer_id) if farmer_id else None,
             crop_type=crop_type,
-            quantity_kg=quantity_kg,
-            harvest_date=harvest_date
+            quantity_kg=float(quantity_kg) if quantity_kg else 0.0,
+            harvest_date=parsed_date
         )
 
         db.session.add(new_harvest)
