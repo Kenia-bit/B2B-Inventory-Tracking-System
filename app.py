@@ -163,7 +163,7 @@ def create_harvest():
         # Convert date string ('2026-07-30') into paython date object
         parsed_date = None
         if date_str:
-            parsed_date = datetime.strptime(date_str, '%Y-%M-%D').date()
+            parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
 
         new_harvest = Harvest(
             user_id=current_user.id,
