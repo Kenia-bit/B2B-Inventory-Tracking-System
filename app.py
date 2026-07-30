@@ -113,17 +113,29 @@ def add_farmer():
 @app.route('/api/farmers/<int:farmer_id>', methods=['DELETE'])
 @login_required
 def delete_farmer(farmer_id):
-    farmer = Farmer.query.filter_by(id=farmer_id, user_id=current_user.id).first_or_404()
+    try:
+        farmer = db.session.get(Farmer, farmer_id)
+        if not farmer:
+            return jsonify({'error': 'Farmer not found'}), 404
     
-    # A must check: prevent deletion if farmer has active harvest logs
-    has_harvests = Harvest.query.filter_by(farmer_id=farmer_id).first()
-    if has_harvests:
-        return jsonify({'error': 'Cannot delete farmer with recorded harvests.'}), 400
+        # A must check: prevent deletion if farmer has active harvest logs
+        harvest_count = Harvest.query.filter_by(farmer_id=farmer_id).count()
 
-    db.session.delete(farmer)
-    db.session.commit()
-    return jsonify({'message': 'Farmer deleted successfully!'}), 200
-
+        if harvest_count > 0:
+            return jsonify({
+                'error': f'Cannot delete {farmer.full_name}. They currently have {harvest_count} inventory/harvest record(s) logged!'
+            }), 400
+        
+        # If no inventory exists, delete the farmer safely
+        db.session.delete(farmer)
+        db.session.commit()
+        return jsonify({'message': f'Farmer {farmer.full_name} was removed successfully!'}), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        print("!!! DELETE FARMER ERROR !!!")
+        traceback.print_exc()
+        return jsonify({'error': 'An unexpected error occurred while trying to delete.'}), 500
 
 # 1. GET ROUTE 
 @app.route('/api/harvests', methods=['GET'])
