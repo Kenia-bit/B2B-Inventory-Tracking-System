@@ -30,6 +30,7 @@ GeoAlchemy2==0.18.4
 geographiclib==2.1
 geopy==2.4.1
 greenlet==3.3.2
+gunicorn==26.0.0
 gyp==0.1
 hidpidaemon==18.4.6
 httplib2==0.20.2
