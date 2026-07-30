@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B2B Inventory & Sales Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+    <!-- Top Navigation Header -->
+    <nav class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center shadow-lg">
+        <div class="flex items-center space-x-3">
+            <div class="bg-emerald-500 text-slate-950 p-2 rounded-xl text-xl font-bold">🌱</div>
+            <div>
+                <h1 class="text-xl font-bold text-white leading-tight">B2B Inventory Tracker</h1>
+                <p class="text-xs text-slate-400">Farmers, Harvests & Sales Management</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <span class="text-sm text-slate-300">Welcome, <strong class="text-emerald-400">{{ current_user.full_name }}</strong></span>
+            <a href="/logout" class="bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 px-3 py-1.5 rounded-lg text-xs font-medium transition">
+                Sign Out
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="max-w-7xl mx-auto p-6 space-y-6">
+
+        <!-- Metrics Overview Badges -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl">
+                <p class="text-xs text-slate-400 uppercase font-semibold">Registered Farmers</p>
+                <p id="total-farmers-count" class="text-2xl font-bold text-emerald-400 mt-1">0</p>
+            </div>
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl">
+                <p class="text-xs text-slate-400 uppercase font-semibold">Available Stock (kg)</p>
+                <p id="total-stock-count" class="text-2xl font-bold text-blue-400 mt-1">0.00</p>
+            </div>
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl">
+                <p class="text-xs text-slate-400 uppercase font-semibold">Total Buyers</p>
+                <p id="total-buyers-count" class="text-2xl font-bold text-purple-400 mt-1">0</p>
+            </div>
+            <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl bg-amber-500/5 border-amber-500/20">
+                <p class="text-xs text-amber-400 uppercase font-semibold">Outstanding Debt</p>
+                <p id="total-debt-count" class="text-2xl font-bold text-amber-400 mt-1">$0.00</p>
+            </div>
+        </div>
+
+        <!-- Main Form & Table Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Left Sidebar: Action Forms -->
+            <div class="space-y-6 lg:col-span-1">
+                
+                <!-- 1. Add Farmer Form -->
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow-xl">
+                    <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                        <span>👨‍🌾</span> Add New Farmer
+                    </h2>
+                    <form id="farmer-form" class="space-y-3">
+                        <input type="text" id="farmer_name" placeholder="Full Name" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <input type="text" id="farmer_phone" placeholder="Phone Number" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <input type="text" id="farmer_location" placeholder="Location/District" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-medium py-2 rounded-lg text-sm transition">
+                            Register Farmer
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 2. Log Harvest Form -->
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow-xl">
+                    <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                        <span>🌾</span> Log Harvest Batch
+                    </h2>
+                    <form id="harvest-form" class="space-y-3">
+                        <select id="harvest_farmer_id" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                            <option value="">Select Farmer...</option>
+                        </select>
+                        <input type="text" id="crop_type" placeholder="Crop Type (e.g. Maize, Beans)" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <input type="number" step="0.01" id="quantity_kg" placeholder="Quantity (kg)" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <input type="date" id="harvest_date" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-2 rounded-lg text-sm transition">
+                            Record Harvest
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 3. Add Buyer Form -->
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow-xl">
+                    <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                        <span>👤</span> Register Buyer
+                    </h2>
+                    <form id="buyer-form" class="space-y-3">
+                        <input type="text" id="buyer_name" placeholder="Buyer Full Name" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <input type="text" id="buyer_phone" placeholder="Phone Number" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <input type="email" id="buyer_email" placeholder="Email Address" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <input type="text" id="buyer_location" placeholder="Location" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-medium py-2 rounded-lg text-sm transition">
+                            Register Buyer
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 4. Create Order / Sale Form -->
+                <div class="bg-slate-800 border border-slate-700 p-5 rounded-2xl shadow-xl">
+                    <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                        <span>🛒</span> Record Order / Sale
+                    </h2>
+                    <form id="order-form" class="space-y-3">
+                        <select id="order_buyer_id" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                            <option value="">Select Buyer...</option>
+                        </select>
+                        <select id="order_harvest_id" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                            <option value="">Select Harvest Stock...</option>
+                        </select>
+                        <input type="number" step="0.01" id="order_quantity_kg" placeholder="Quantity to Buy (kg)" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <input type="number" step="0.01" id="order_unit_price" placeholder="Price per kg ($)" required class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                        <select id="order_payment_status" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                            <option value="debt">Unpaid (Debt)</option>
+                            <option value="paid">Paid</option>
+                        </select>
+                        <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-medium py-2 rounded-lg text-sm transition">
+                            Place Order
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+
+            <!-- Right Area: Data Tables -->
+            <div class="space-y-6 lg:col-span-2">
+
+                <!-- Orders Table -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
+                    <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                        <span>📋</span> Recent Orders & Debt Tracker
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-900 text-slate-400 text-xs uppercase">
+                                <tr>
+                                    <th class="p-3">Buyer</th>
+                                    <th class="p-3">Crop</th>
+                                    <th class="p-3">Qty (kg)</th>
+                                    <th class="p-3">Total</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body" class="divide-y divide-slate-700">
+                                <tr><td colspan="6" class="p-4 text-center text-slate-500">No orders recorded yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Harvest Stock Table -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
+                    <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                        <span>📦</span> Available Harvest Inventory
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-900 text-slate-400 text-xs uppercase">
+                                <tr>
+                                    <th class="p-3">Crop Type</th>
+                                    <th class="p-3">Available (kg)</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3">Farmer</th>
+                                </tr>
+                            </thead>
+                            <tbody id="harvests-table-body" class="divide-y divide-slate-700">
+                                <tr><td colspan="3" class="p-4 text-center text-slate-500">No harvests logged yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Buyers Table -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
+                    <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                        <span>👥</span> Registered Buyers Directory
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-900 text-slate-400 text-xs uppercase">
+                                <tr>
+                                    <th class="p-3">Name</th>
+                                    <th class="p-3">Phone</th>
+                                    <th class="p-3">Location</th>
+                                    <th class="p-3">Email</th>
+                                </tr>
+                            </thead>
+                            <tbody id="buyers-table-body" class="divide-y divide-slate-700">
+                                <tr><td colspan="3" class="p-4 text-center text-slate-500">No buyers added yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Registered Farmers Directory -->
+                <div class="bg-slate-800 border border-slate-700 rounded-2xl p-5 shadow-xl">
+                    <h2 class="text-base font-bold text-white mb-4 flex items-center gap-2">
+                        <span>👨‍🌾</span> Registered Farmers Directory
+                    </h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-900 text-slate-400 text-xs uppercase">
+                                <tr>
+                                    <th class="p-3">Name</th>
+                                    <th class="p-3">Phone</th>
+                                    <th class="p-3">Location</th>
+                                </tr>
+                            </thead>
+                            <tbody id="farmers-table-body" class="divide-y divide-slate-700">
+                                <tr><td colspan="3" class="p-4 text-center text-slate-500">No farmers registered yet.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- Frontend JavaScript Logic -->
+    <script>
+    // --- 1. LOAD FARMERS ---
+    async function loadFarmers() {
+        try {
+            const res = await fetch('/api/farmers');
+            const data = await res.json();
+            
+            const countElem = document.getElementById('total-farmers-count');
+            if (countElem) countElem.innerText = data.length;
+
+            const select = document.getElementById('harvest_farmer_id');
+            const tbody = document.getElementById('farmers-table-body');
+
+            if (select) select.innerHTML = '<option value="">Select Farmer...</option>';
+            if (tbody) tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">No farmers registered yet.</td></tr>';
+            } else {
+                data.forEach(f => {
+                    // Match Flask backend ID key (f.id or f.farmer_id)
+                    const farmerId = f.id || f.farmer_id;
+                    
+                    if (select) {
+                        select.innerHTML += `<option value="${farmerId}">${f.full_name} (${f.location || ''})</option>`;
+                    }
+                    if (tbody) {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td class="p-3 font-semibold text-white">${f.full_name}</td>
+                                <td class="p-3 text-slate-400">${f.phone_number || 'N/A'}</td>
+                                <td class="p-3 text-slate-400">${f.location || 'N/A'}</td>
+                                <td class="p-3">
+                                    <button onclick="deleteFarmer(${farmerId})" class="text-xs text-red-400 hover:text-red-300">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>`;
+                    }
+                });
+            }
+        } catch (err) {
+            console.error('Error loading farmers:', err);
+        }
+    }
+
+    // --- 2. DELETE FARMER ---
+    async function deleteFarmer(farmerId) {
+        if (!confirm('Are you sure you want to delete this farmer?')) return;
+
+        const res = await fetch(`/api/farmers/${farmerId}`, { method: 'DELETE' });
+        const data = await res.json();
+
+        if (res.ok) {
+            alert(data.message || 'Farmer deleted successfully');
+            loadFarmers();
+        } else {
+            alert(data.error || 'Could not delete farmer.');
+        }
+    }
+
+    // --- 3. LOAD HARVESTS ---
+    async function loadHarvests() {
+        try {
+            const res = await fetch('/api/harvests');
+            const data = await res.json();
+            
+            let totalStock = 0;
+            const tbody = document.getElementById('harvests-table-body');
+            const orderSelect = document.getElementById('order_harvest_id');
+            
+            if (tbody) tbody.innerHTML = '';
+            if (orderSelect) orderSelect.innerHTML = '<option value="">Select Harvest Stock...</option>';
+
+            if (data.length === 0) {
+                if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">No harvests logged yet.</td></tr>';
+            } else {
+                data.forEach(h => {
+                    const qty = parseFloat(h.quantity_kg || 0);
+                    totalStock += qty;
+                    const harvestId = h.harvest_id || h.id;
+                    const isAvailable = qty > 0;
+
+                    if (tbody) {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td class="p-3 font-semibold text-white">${h.crop_type}</td>
+                                <td class="p-3 text-blue-400 font-bold">${qty} kg</td>
+                                <td class="p-3">
+                                    <span class="px-2 py-0.5 rounded text-xs ${isAvailable ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}">
+                                        ${isAvailable ? 'Available' : 'Out of Stock'}
+                                    </span>
+                                </td>
+                                <td class="p-3 text-slate-300">${h.farmer_name || 'N/A'}</td>
+                            </tr>`;
+                    }
+
+                    if (isAvailable && orderSelect) {
+                        orderSelect.innerHTML += `<option value="${harvestId}">${h.crop_type} (${qty}kg left)</option>`;
+                    }
+                });
+            }
+
+            const stockElem = document.getElementById('total-stock-count');
+            if (stockElem) stockElem.innerText = totalStock.toFixed(2);
+        } catch (err) {
+            console.error('Error loading harvests:', err);
+        }
+    }
+
+    // --- 4. LOAD BUYERS ---
+    async function loadBuyers() {
+        try {
+            const res = await fetch('/api/buyers');
+            const data = await res.json();
+            
+            const countElem = document.getElementById('total-buyers-count');
+            if (countElem) countElem.innerText = data.length;
+
+            const tbody = document.getElementById('buyers-table-body');
+            const select = document.getElementById('order_buyer_id');
+            
+            if (tbody) tbody.innerHTML = '';
+            if (select) select.innerHTML = '<option value="">Select Buyer...</option>';
+
+            if (data.length === 0) {
+                if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">No buyers added yet.</td></tr>';
+            } else {
+                data.forEach(b => {
+                    const buyerId = b.buyer_id || b.id;
+                    if (tbody) {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td class="p-3 font-semibold text-white">${b.full_name}</td>
+                                <td class="p-3 text-slate-400">${b.phone_number || 'N/A'}</td>
+                                <td class="p-3 text-slate-400">${b.location || 'N/A'}</td>
+                                <td class="p-3 text-slate-400 text-sm">${b.email || 'N/A'}</td>
+                            </tr>`;
+                    }
+                    if (select) {
+                        select.innerHTML += `<option value="${buyerId}">${b.full_name}</option>`;
+                    }
+                });
+            }
+        } catch (err) {
+            console.error('Error loading buyers:', err);
+        }
+    }
+
+    // --- 5. LOAD ORDERS ---
+    async function loadOrders() {
+        try {
+            const res = await fetch('/api/orders');
+            const data = await res.json();
+            let totalDebt = 0;
+
+            const tbody = document.getElementById('orders-table-body');
+            if (tbody) tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="p-4 text-center text-slate-500">No orders recorded yet.</td></tr>';
+            } else {
+                data.forEach(o => {
+                    const statusUpper = (o.payment_status || '').toUpperCase();
+                    const totalPrice = parseFloat(o.total_price || 0);
+
+                    if (statusUpper === 'DEBT') totalDebt += totalPrice;
+
+                    const statusBadge = statusUpper === 'PAID' 
+                        ? `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded text-xs font-semibold">PAID</span>`
+                        : `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded text-xs font-semibold">DEBT</span>`;
+
+                    const orderId = o.order_id || o.id;
+
+                    if (tbody) {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td class="p-3 font-medium text-white">${o.buyer_name || 'Unknown Buyer'}</td>
+                                <td class="p-3 text-slate-300">${o.crop_type || 'N/A'}</td>
+                                <td class="p-3 text-slate-300">${o.quantity_kg} kg</td>
+                                <td class="p-3 font-bold text-white">$${totalPrice.toFixed(2)}</td>
+                                <td class="p-3">${statusBadge}</td>
+                                <td class="p-3">
+                                    <button onclick="togglePayment(${orderId})" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 px-2 py-1 rounded transition">
+                                        Toggle Status
+                                    </button>
+                                </td>
+                            </tr>`;
+                    }
+                });
+            }
+
+            const debtElem = document.getElementById('total-debt-count');
+            if (debtElem) debtElem.innerText = `$${totalDebt.toFixed(2)}`;
+        } catch (err) {
+            console.error('Error loading orders:', err);
+        }
+    }
+
+    // --- 6. TOGGLE ORDER STATUS ---
+    async function togglePayment(orderId) {
+        try {
+            const res = await fetch(`/api/orders/${orderId}/toggle-status`, { method: 'PATCH' });
+            if (res.ok) {
+                loadOrders();
+            } else {
+                const err = await res.json();
+                alert(err.error || 'Failed to toggle status');
+            }
+        } catch (err) {
+            console.error('Error toggling payment:', err);
+        }
+    }
+
+    // --- 7. FORM SUBMISSIONS ---
+    document.addEventListener('DOMContentLoaded', () => {
+        // Init Loads
+        loadFarmers();
+        loadHarvests();
+        loadBuyers();
+        loadOrders();
+
+        // Farmer Form
+        const farmerForm = document.getElementById('farmer-form');
+        if (farmerForm) {
+            farmerForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const res = await fetch('/api/farmers', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        full_name: document.getElementById('farmer_name').value,
+                        phone_number: document.getElementById('farmer_phone').value,
+                        location: document.getElementById('farmer_location').value
+                    })
+                });
+
+                if (res.ok) {
+                    alert('Farmer registered successfully!');
+                    e.target.reset();
+                    loadFarmers();
+                } else {
+                    const data = await res.json();
+                    alert(data.error || 'Failed to register farmer');
+                } 
+            };
+        }
+
+        // Harvest Form
+        const harvestForm = document.getElementById('harvest-form');
+        if (harvestForm) {
+            harvestForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const res = await fetch('/api/harvests', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        farmer_id: document.getElementById('harvest_farmer_id').value,
+                        crop_type: document.getElementById('crop_type').value,
+                        quantity_kg: document.getElementById('quantity_kg').value,
+                        harvest_date: document.getElementById('harvest_date').value
+                    })
+                });
+
+                if (res.ok) {
+                    alert('Harvest batch logged successfully!');
+                    e.target.reset();
+                    loadHarvests();
+                } else {
+                    const data = await res.json();
+                    alert(data.error || 'Failed to log harvest');
+                }  
+            };
+        }
+
+        // Buyer Form
+        const buyerForm = document.getElementById('buyer-form');
+        if (buyerForm) {
+            buyerForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const res = await fetch('/api/buyers', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        full_name: document.getElementById('buyer_name').value,
+                        phone_number: document.getElementById('buyer_phone').value,
+                        email: document.getElementById('buyer_email').value,
+                        location: document.getElementById('buyer_location').value
+                    })
+                });
+
+                const data = await res.json();
+                if (res.ok) {
+                    alert('Buyer registered successfully!');
+                    e.target.reset();
+                    loadBuyers();
+                } else {
+                    alert(data.error || 'Failed to register buyer');
+                }
+            };
+        }
+
+        // Order Form
+        const orderForm = document.getElementById('order-form');
+        if (orderForm) {
+            orderForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const res = await fetch('/api/orders', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        buyer_id: document.getElementById('order_buyer_id').value,
+                        harvest_id: document.getElementById('order_harvest_id').value,
+                        quantity_kg: document.getElementById('order_quantity_kg').value,
+                        unit_price: document.getElementById('order_unit_price').value,
+                        payment_status: document.getElementById('order_payment_status').value
+                    })
+                });
+
+                if (res.ok) {
+                    alert('Order placed successfully!');
+                    e.target.reset();
+                    loadOrders();
+                    loadHarvests();
+                } else {
+                    const err = await res.json();
+                    alert(err.error || 'Failed to place order');
+                }
+            };
+        }
+    });
+</script>
+</body>
+</html>
