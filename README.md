@@ -35,4 +35,4 @@ This project is configured for automated web deployment on Render using a Postgr
 This project is open-source and developed for academic assessment purposes.
 
 ## URL for the System
-https://b2b-inventory-tracking-system.onrender.com/
+https://b2b-inventory-tracking-system.onrender.com
