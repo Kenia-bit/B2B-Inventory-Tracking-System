@@ -10,14 +10,14 @@ app.config['SECRET_KEY'] = 'your-secret-key-here'
 
 import os
 
-# Get the database URL from Render environment variables, or fall back to local sqlite
-db_url = os.environ.get("DATABASE_URL", "sqlite:///app.db")
+# Get the database URL from Render environment variables
+db_url = os.environ.get('DATABASE_URL')
 
 # Render gives "postgres://...", but SQLAlchemy requires "postgresql://..."
-if db_url.startswith("postgres://"):
+if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+app.config["SQLALCHEMY_DATABASE_URI"] = db_url or 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
